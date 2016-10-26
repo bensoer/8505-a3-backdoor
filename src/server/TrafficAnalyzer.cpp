@@ -4,6 +4,16 @@
 
 #include "TrafficAnalyzer.h"
 
+TrafficAnalyzer * TrafficAnalyzer::instance = nullptr;
+
+TrafficAnalyzer * TrafficAnalyzer::getInstance() {
+    if(TrafficAnalyzer::instance == nullptr){
+        TrafficAnalyzer::instance = new TrafficAnalyzer();
+    }
+
+    return TrafficAnalyzer::instance;
+}
+
 TrafficAnalyzer::TrafficAnalyzer() {
 
 }

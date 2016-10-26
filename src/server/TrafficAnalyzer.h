@@ -8,8 +8,13 @@
 
 class TrafficAnalyzer {
 
-public:
+private:
     TrafficAnalyzer();
+
+    static TrafficAnalyzer * instance;
+
+public:
+    static TrafficAnalyzer * getInstance();
 
     void addPacket();
 

