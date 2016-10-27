@@ -14,16 +14,17 @@ using namespace std;
 class NetworkMonitor {
 
 private:
-    TrafficAnalyzer * trafficAnalyzer;
+    NetworkMonitor();
+    static NetworkMonitor * instance;
 
-    NetworkMonitor * listeningInstance;
+    pcap_t * currentFD = nullptr;
 
-    pcap_t * currentFD;
+    string * data = nullptr;
 
     static void packetCallback(u_char *ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet);
 
 public:
-    NetworkMonitor(TrafficAnalyzer * trafficAnalyzer);
+    static NetworkMonitor * getInstance();
 
     string listenForTraffic(pcap_if_t * listeningInterface);
 

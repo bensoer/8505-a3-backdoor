@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/server/NetworkMonitor.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/server/CovertSocket.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/utils/argparcer.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/utils/Structures.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/utils/Logger.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/utils/Logger.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />

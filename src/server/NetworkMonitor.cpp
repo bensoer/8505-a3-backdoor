@@ -4,29 +4,53 @@
 
 #include "NetworkMonitor.h"
 #include "../utils/Logger.h"
+#include "../utils/Structures.h"
+#include <netinet/udp.h>
+#include <netinet/in.h>
+#include <iostream>
 
+NetworkMonitor * NetworkMonitor::instance = nullptr;
 
+NetworkMonitor::NetworkMonitor() {
+}
 
-NetworkMonitor::NetworkMonitor(TrafficAnalyzer * trafficAnalyzer) {
-    this->trafficAnalyzer = trafficAnalyzer;
+NetworkMonitor * NetworkMonitor::getInstance() {
+    if(NetworkMonitor::instance == nullptr){
+        NetworkMonitor::instance = new NetworkMonitor();
+    }
+
+    return NetworkMonitor::instance;
 }
 
 void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet){
 
+    Logger::debug("Packet Found. Now Parsing");
 
-    //check if it is our packet
+    char * ptr;
+
+    struct sniff_ethernet * ethernet = (struct sniff_ethernet*)(packet);
+    struct sniff_ip * ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
+    u_int size_ip = IP_HL(ip) * 4;
+    struct udphdr * udp = (struct udphdr *)(packet + SIZE_ETHERNET + size_ip);
+    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + 8);
+
+    Logger::debug("Structures Found Over Packet");
+    //check if it is our packet - has dest port of 4378
+    short destinationPort = ntohs(udp->uh_dport);
+    printf("%d\n", destinationPort);
 
     //if our packet. parse what we know out of it
+    printf("%s\n", payload);
 
-    //if all needed is there, kill further analysis
-
-    //else add to TrafficAnalyzer
-
+    NetworkMonitor::instance->data = new string((char *)payload);
+    NetworkMonitor::instance->killListening();
 
 }
 
 void NetworkMonitor::killListening() {
-    pcap_breakloop(this->currentFD);
+    if(this->currentFD != nullptr){
+        pcap_breakloop(this->currentFD);
+    }
 }
 
 string NetworkMonitor::listenForTraffic(pcap_if_t * listeningInterface) {
@@ -62,7 +86,12 @@ string NetworkMonitor::listenForTraffic(pcap_if_t * listeningInterface) {
 
     u_char* args = NULL;
     //listen for UDP packets
-    this->listeningInstance = this;
     pcap_loop(this->currentFD, 0, NetworkMonitor::packetCallback, args);
+
+    if(this->data == nullptr){
+        return "";
+    }else{
+        return (*this->data);
+    }
 
 }

