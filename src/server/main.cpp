@@ -160,6 +160,10 @@ int main(int argc, char * argv[]) {
         string command = monitor->listenForTraffic(listeningInterface); //this will hang until a single unit of data is received and then return it
         cout << "Back Out" << endl;
 
+        if(strcmp(command.c_str(), "-1")==0){
+            shutdownServer(0);
+        }
+
         if(keepListening == false){
             break;
         }
