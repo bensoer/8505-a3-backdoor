@@ -19,6 +19,8 @@ private:
 
     int rawSocket;
 
+    void ChangetoDnsNameFormat(char* dns, char* host);
+
 public:
 
     static CovertSocket * getInstance();
