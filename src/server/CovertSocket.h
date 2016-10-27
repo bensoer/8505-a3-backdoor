@@ -13,14 +13,20 @@ using namespace std;
 class CovertSocket {
 
 private:
-    TrafficAnalyzer * trafficAnalyzer;
+    CovertSocket();
+
+    static CovertSocket * instance;
+
+    int rawSocket;
 
 public:
-    CovertSocket(TrafficAnalyzer * trafficAnalyzer);
+
+    static CovertSocket * getInstance();
 
     void send(string data);
 
-    string recv();
+    unsigned short csum(unsigned short *ptr, int nbytes);
+
 };
 
 

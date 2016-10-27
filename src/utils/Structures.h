@@ -8,6 +8,7 @@
 #include <pcap.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <netinet/udp.h>
 
 /* Ethernet addresses are 6 bytes */
 #define ETHER_ADDR_LEN	6
@@ -66,5 +67,16 @@ struct sniff_tcp {
 };
 
 
+#define PKT_SIZE 65535
+
+typedef struct    //needed for checksum calculation - see notes
+{
+    unsigned int source_address;
+    unsigned int dest_address;
+    unsigned char placeholder;
+    unsigned char protocol;
+    unsigned short tcp_length;
+    struct udphdr udp;
+}pseudo_header;
 
 #endif //INC_8505_A3_BACKDOOR_STRUCTURES_H
