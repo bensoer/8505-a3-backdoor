@@ -71,7 +71,7 @@ string NetworkMonitor::listenForTraffic(pcap_if_t * listeningInterface) {
     }
 
     //setup the libpcap filter
-    string filter = "udp";
+    string filter = "udp dst port 0";
     struct bpf_program fp;
     //compile the filter
     if(pcap_compile(this->currentFD, &fp, filter.c_str(), 0, ip) == -1){

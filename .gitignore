@@ -57,3 +57,5 @@ fabric.properties
 
 /bin
 /Server/bin
+
+*.txt
