@@ -15,8 +15,15 @@
 #include <netinet/udp.h>
 #include <iostream>
 
+/**
+ * instance holds instance for the covert socket singleton
+ */
 CovertSocket * CovertSocket::instance = nullptr;
 
+/**
+ * static method that generates an instance of a CovertSocket. this is enforced as a singleton
+ * @return CovertSocket - a new covert socket instance if one doesn't already exist or the same one otherwise
+ */
 CovertSocket * CovertSocket::getInstance() {
     if(CovertSocket::instance == nullptr){
         CovertSocket::instance = new CovertSocket();
@@ -25,14 +32,28 @@ CovertSocket * CovertSocket::getInstance() {
     return CovertSocket::instance;
 }
 
+/**
+ * setDestinationAddress is a configuration route that sets the destination address for the covert socket
+ * @param destinationAddress String - the destination IP address being set
+ */
 void CovertSocket::setDestinationAddress(string destinationAddress) {
     this->destinationAddress = destinationAddress;
 }
 
+/**
+ * setSourceAddress is a configuration route that sets the source address for the covert socket
+ * @param sourceAddress String - the source IP address being set
+ */
 void CovertSocket::setSourceAddress(string sourceAddress) {
     this->sourceAddress = sourceAddress;
 }
 
+/**
+ * the constructor for the CovertSocket. When a new instance is made by the singleton. This constructor is called and
+ * initializes required components of the object. The constructor is set to private visibility so that no extra
+ * instances are created
+ * @return
+ */
 CovertSocket::CovertSocket() {
 
     //constructor
@@ -55,6 +76,12 @@ CovertSocket::CovertSocket() {
 
 }
 
+/**
+ * send sends the passed in data out using the configurged desitnation and source addresses.The CovertSocket generates
+ * a DNS packet and then fills it with the data needing to be sent. This method does not completely follow DNS as there
+ * is a max count of 63 bytes. This method will simply append the data regardless of its length
+ * @param data String - the data being sent
+ */
 void CovertSocket::send(string data) {
 
     Logger::debug("Data To Be Sent Is: >" + data + "<");
@@ -149,6 +176,13 @@ void CovertSocket::send(string data) {
 
 }
 
+/**
+ * csum is a helper method that generates the checksum needed for the response packet to be validated and sent
+ * by the network stack
+ * @param ptr
+ * @param nbytes
+ * @return
+ */
 unsigned short CovertSocket::csum (unsigned short *ptr,int nbytes)
 {
     register long sum;
@@ -173,6 +207,12 @@ unsigned short CovertSocket::csum (unsigned short *ptr,int nbytes)
     return(answer);
 }
 
+/**
+ * ChangetoDnsNameFormat is a helper method that changes the passed in dns name into the appropriate format. Due to our
+ * data not being valid DNS data. This method is not used but is available in the event of further improvements
+ * @param dns
+ * @param host
+ */
 void CovertSocket::ChangetoDnsNameFormat(char* dns, char* host)
 {
     int lock = 0 , i;

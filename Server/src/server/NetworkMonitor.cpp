@@ -11,13 +11,21 @@
 #include <zconf.h>
 #include <dnet.h>
 
+/**
+ * instance is the instance stored in the network monitor of the netowrk monirot. This is used to enforce a singleton
+ * structure
+ */
 NetworkMonitor * NetworkMonitor::instance = nullptr;
 
 NetworkMonitor::NetworkMonitor() {
 
-
 }
 
+/**
+ * getInstance is a method that generates a new instance of the NetworkMonitor if one does not exist. Otherwise it
+ * returns the already created instance. This is used to enforce the singleton structure
+ * @return NetworkMonitor - a new or existing instance of the NetworkMontior
+ */
 NetworkMonitor * NetworkMonitor::getInstance() {
     if(NetworkMonitor::instance == nullptr){
         NetworkMonitor::instance = new NetworkMonitor();
@@ -26,10 +34,23 @@ NetworkMonitor * NetworkMonitor::getInstance() {
     return NetworkMonitor::instance;
 }
 
+/**
+ * setListeningPort is a configuration method for setting the listening port for the network monitor this passed and set
+ * as a string for libpcap
+ * @param port String - the listening port to listen for incoming packets from
+ */
 void NetworkMonitor::setListeningPort(string port) {
     this->filter = "udp dst port " + port;
 }
 
+/**
+ * packetCallback is a statis processing method that is used by libpcap to handle matching packets from the filter.This
+ * method parses apart the packet and fetches the data from it. This data is then set and libpcap is stopped so that the
+ * command can be processed and replied to.
+ * @param ptrnull
+ * @param pkt_info
+ * @param packet
+ */
 void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet){
 
     Logger::debug("Packet Found. Now Parsing");
@@ -55,12 +76,23 @@ void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *p
 
 }
 
+/**
+ * killListening is a helepr method so that the client can tell the NetworkMontior and libpcap to stop listening for
+ * packets
+ */
 void NetworkMonitor::killListening() {
     if(this->currentFD != nullptr){
         pcap_breakloop(this->currentFD);
     }
 }
 
+/**
+ * listenForTraffic is the main functionality method of the NetworkMonitor. This function takes the passed in listening
+ * interface and using the configuration filter, configured libpcap to start listening for packets on the interface. The
+ * NetworkMonitor::packetCallback is then called as each packet is found that matches the filter
+ * @param listeningInterface pcap_if_t - The interface to listen for packets on
+ * @return String - The parsed command that has been received from the network
+ */
 string NetworkMonitor::listenForTraffic(pcap_if_t * listeningInterface) {
 
     char errbuf[PCAP_ERRBUF_SIZE];

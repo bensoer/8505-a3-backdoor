@@ -7,7 +7,6 @@
 
 #include <string>
 #include <pcap.h>
-#include "TrafficAnalyzer.h"
 
 using namespace std;
 

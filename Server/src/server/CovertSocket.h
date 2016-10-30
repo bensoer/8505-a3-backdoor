@@ -6,7 +6,6 @@
 #define INC_8505_A3_BACKDOOR_COVERTSOCKET_H
 
 #include <string>
-#include "TrafficAnalyzer.h"
 
 using namespace std;
 
