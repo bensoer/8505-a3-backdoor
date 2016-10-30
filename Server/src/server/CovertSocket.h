@@ -19,6 +19,9 @@ private:
 
     int rawSocket;
 
+    string sourceAddress = "127.0.0.1";
+    string destinationAddress = "127.0.0.1";
+
     void ChangetoDnsNameFormat(char* dns, char* host);
 
 public:
@@ -28,6 +31,9 @@ public:
     void send(string data);
 
     unsigned short csum(unsigned short *ptr, int nbytes);
+
+    void setSourceAddress(string sourceAddress);
+    void setDestinationAddress(string destinationAddress);
 
 };
 

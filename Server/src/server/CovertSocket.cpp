@@ -6,6 +6,7 @@
 #include <cstring>
 #include "CovertSocket.h"
 #include "../utils/Structures.h"
+#include "../utils/Logger.h"
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -24,6 +25,14 @@ CovertSocket * CovertSocket::getInstance() {
     return CovertSocket::instance;
 }
 
+void CovertSocket::setDestinationAddress(string destinationAddress) {
+    this->destinationAddress = destinationAddress;
+}
+
+void CovertSocket::setSourceAddress(string sourceAddress) {
+    this->sourceAddress = sourceAddress;
+}
+
 CovertSocket::CovertSocket() {
 
     //constructor
@@ -35,13 +44,22 @@ CovertSocket::CovertSocket() {
         perror("setsockopt");
     }
 
+    //IP_HDRINCL to stop the kernel from building the packet headers
+    {
+        int one = 1;
+        const int *val = &one;
+        if (setsockopt(this->rawSocket, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0)
+            perror("setsockopt");
+    }
+
+
 }
 
 void CovertSocket::send(string data) {
 
-    cout << "DATA To BE SENT IS: >" << data << "<" << endl;
-    cout << "DATA LENGTH: >" << data.length() << "<" << endl;
-    cout << "DATA SIZE: >" << sizeof(strlen(data.c_str()) * sizeof(char)) << "<" << endl;
+    Logger::debug("Data To Be Sent Is: >" + data + "<");
+    Logger::debug("Data Length: >" + to_string(data.length()) + "<");
+    Logger::debug("Data Size: >" + to_string(data.size()) + "<");
 
     char datagram[PKT_SIZE];
     struct iphdr *ip = (struct iphdr *) datagram;
@@ -55,7 +73,7 @@ void CovertSocket::send(string data) {
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons(53);
-    sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+    sin.sin_addr.s_addr = inet_addr(this->destinationAddress.c_str());
 
     memset(datagram, 0, PKT_SIZE);
 
@@ -69,7 +87,7 @@ void CovertSocket::send(string data) {
     ip->ttl = 255;        // Set the TTL value
     ip->protocol = IPPROTO_UDP;
     ip->check = 0;        //Initialize to zero before calculating checksum
-    ip->saddr = inet_addr ("127.0.0.1");  //Source IP address
+    ip->saddr = inet_addr (this->sourceAddress.c_str());  //Source IP address
     ip->daddr = sin.sin_addr.s_addr;
 
     ip->check = this->csum((unsigned short *) datagram, ip->tot_len >> 1);
@@ -79,9 +97,9 @@ void CovertSocket::send(string data) {
     //udp->source
     udp->source = htons(4378);
 
-    printf("UDP Size: %d ", sizeof(*udp) + data.size());
-    printf("UDP Header: %d ", sizeof(*udp));
-    printf("UDP Payload: %d\n", data.size());
+    Logger::debug("UDP Size: " + to_string(sizeof(*udp) + data.size()));
+    Logger::debug("UDP Header: " + to_string(sizeof(*udp)));
+    Logger::debug("UDP Payload: " + to_string(data.size()));
 
     //udp->len = htons(sizeof(*udp) + data.size());
     //udp->uh_sum = htons(sizeof(*udp) + data.size());
@@ -91,7 +109,7 @@ void CovertSocket::send(string data) {
 
     //Pseudo Header
     psh.dest_address = sin.sin_addr.s_addr;
-    psh.source_address = inet_addr("127.0.0.1");
+    psh.source_address = inet_addr(this->sourceAddress.c_str());
     psh.placeholder = 0;
     psh.protocol = IPPROTO_UDP;
 
@@ -116,26 +134,12 @@ void CovertSocket::send(string data) {
     dns->add_count = 0;
 
     strcpy(query, data.c_str());
-
-    //char * writable = new char[data.size() + 1];
-    //std::copy(data.begin(), data.end(), writable);
-    //writable[data.size()] = '\0'; // don't forget the terminating 0
-
     //ChangetoDnsNameFormat(query, writable);
 
     struct QUESTION *dnsq = (struct QUESTION *)(datagram + sizeof(*ip) + sizeof(*udp) + sizeof(*dns) + data.size());
 
     dnsq->qtype = htons(1); // 1 for IPv4 lookup
     dnsq->qclass = htons(1); //1 for internet class
-
-
-    //IP_HDRINCL to stop the kernel from building the packet headers
-    {
-        int one = 1;
-        const int *val = &one;
-        if (setsockopt(this->rawSocket, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0)
-            perror("setsockopt");
-    }
 
     //Send the packet
     if (sendto (this->rawSocket, datagram, ip->tot_len, 0, (struct sockaddr *) &sin, sizeof (sin)) < 0)

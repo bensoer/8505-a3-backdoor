@@ -8,10 +8,14 @@
 #include <netinet/udp.h>
 #include <netinet/in.h>
 #include <iostream>
+#include <zconf.h>
+#include <dnet.h>
 
 NetworkMonitor * NetworkMonitor::instance = nullptr;
 
 NetworkMonitor::NetworkMonitor() {
+
+
 }
 
 NetworkMonitor * NetworkMonitor::getInstance() {
@@ -20,6 +24,10 @@ NetworkMonitor * NetworkMonitor::getInstance() {
     }
 
     return NetworkMonitor::instance;
+}
+
+void NetworkMonitor::setListeningPort(string port) {
+    this->filter = "udp dst port " + port;
 }
 
 void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet){
