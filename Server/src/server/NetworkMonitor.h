@@ -7,7 +7,6 @@
 
 #include <string>
 #include <pcap.h>
-#include "TrafficAnalyzer.h"
 
 using namespace std;
 
@@ -28,6 +27,8 @@ public:
     string listenForTraffic(pcap_if_t * listeningInterface);
 
     void killListening();
+
+    void setListeningPort(string port);
 
 
 };
