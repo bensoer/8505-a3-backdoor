@@ -295,6 +295,7 @@ int main(int argc, char * argv[]) {
 
     Logger::debug("Finding Interfaces");
 
+
     //start monitoring for UDP traffic. If it is our own, it needs handling, if not, add it to traffic analyzer
     CovertSocket * socket = CovertSocket::getInstance(); //how we respond to commands
     monitor = NetworkMonitor::getInstance(); //how we listen for commands

@@ -18,7 +18,6 @@ private:
     pcap_t * currentFD = nullptr;
     string * data = nullptr;
     string filter = "udp dst port 100";
-    string * cwd = nullptr;
 
     static void packetCallback(u_char *ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet);
 
