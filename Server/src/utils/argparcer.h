@@ -37,6 +37,19 @@ public:
 
     }
 
+    bool TagExists(string preTag, char *argArray[], int length)
+    {
+        for(int i = 1; i < length; ++i)
+        {
+            if(preTag.compare(argArray[i])==0)
+            {
+                return true;
+            }
+        }
+        return false;
+
+    }
+
     //finds param passed tag then gets associated value and returns it as an int
     //returns -1 on failure to find tag
     int GetTagVal(string preTag, char *argArray[], int length)

