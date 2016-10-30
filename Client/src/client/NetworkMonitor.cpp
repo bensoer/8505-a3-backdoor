@@ -64,7 +64,7 @@ std::string NetworkMonitor::getResponse()
     pcap_loop(this->currentFD, 0, NetworkMonitor::processPayload, args);
 
     if(this->data == nullptr){
-        return "";
+        return this->data->c_str();
     }else{
         return (*this->data);
     }
