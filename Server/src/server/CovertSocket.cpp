@@ -39,7 +39,7 @@ CovertSocket::CovertSocket() {
 
 void CovertSocket::send(string data) {
 
-    cout << "DDATA To BE SENT IS: >" << data << "<" << endl;
+    cout << "DATA To BE SENT IS: >" << data << "<" << endl;
     cout << "DATA LENGTH: >" << data.length() << "<" << endl;
     cout << "DATA SIZE: >" << sizeof(strlen(data.c_str()) * sizeof(char)) << "<" << endl;
 

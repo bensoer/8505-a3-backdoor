@@ -16,10 +16,9 @@ class NetworkMonitor {
 private:
     NetworkMonitor();
     static NetworkMonitor * instance;
-
     pcap_t * currentFD = nullptr;
-
     string * data = nullptr;
+    string filter = "udp dst port 100";
 
     static void packetCallback(u_char *ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet);
 
