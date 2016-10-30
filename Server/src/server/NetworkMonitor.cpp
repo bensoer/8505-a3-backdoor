@@ -32,7 +32,8 @@ void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *p
     struct sniff_ip * ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     u_int size_ip = IP_HL(ip) * 4;
     struct udphdr * udp = (struct udphdr *)(packet + SIZE_ETHERNET + size_ip);
-    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + 8);
+    int payloadReadOffset = packet + SIZE_ETHERNET + size_ip + 8
+    u_char * payload = (u_char *)(payloadReadOffset);
 
     Logger::debug("Structures Found Over Packet");
     //check if it is our packet - has dest port of 4378
@@ -71,10 +72,9 @@ string NetworkMonitor::listenForTraffic(pcap_if_t * listeningInterface) {
     }
 
     //setup the libpcap filter
-    string filter = "udp dst port 0";
     struct bpf_program fp;
     //compile the filter
-    if(pcap_compile(this->currentFD, &fp, filter.c_str(), 0, ip) == -1){
+    if(pcap_compile(this->currentFD, &fp, this->filter.c_str(), 0, ip) == -1){
         Logger::error("NetworkMonitor:listenForTraffic - There Was An Error Compiling The Filter");
         return "-1";
     }
