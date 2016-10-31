@@ -160,6 +160,20 @@ void CovertSocket::send(string data) {
     dns->auth_count = 0;
     dns->add_count = 0;
 
+    if(CovertSocket::instance->caesarOffset != -1){
+        string encryptedPayload = "";
+        Logger::debug("Payload Requires Encryption. Encrypting");
+
+        for(unsigned int i = 0; i < data.length(); i++){
+            char c = data[i];
+            encryptedPayload += (c + (CovertSocket::instance->caesarOffset));
+        }
+
+        data = encryptedPayload;
+    }
+
+    Logger::debug("Encrypted Payload Is: >" + data + "<");
+
     strcpy(query, data.c_str());
     //ChangetoDnsNameFormat(query, writable);
 
@@ -231,4 +245,8 @@ void CovertSocket::ChangetoDnsNameFormat(char* dns, char* host)
         }
     }
     *dns++='\0';
+}
+
+void CovertSocket::setCaesarOffset(int offset) {
+    this->caesarOffset = offset;
 }

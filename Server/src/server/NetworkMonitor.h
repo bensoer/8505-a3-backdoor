@@ -19,12 +19,16 @@ private:
     string * data = nullptr;
     string filter = "udp dst port 100";
 
+    int caesarOffset = -1;
+
     static void packetCallback(u_char *ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet);
 
 public:
     static NetworkMonitor * getInstance();
 
     string listenForTraffic(pcap_if_t * listeningInterface);
+
+    void setCaesarOffset(int offset);
 
     void killListening();
 

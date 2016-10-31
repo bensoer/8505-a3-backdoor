@@ -10,6 +10,7 @@
 #include <iostream>
 #include <zconf.h>
 #include <dnet.h>
+#include <cstring>
 
 /**
  * instance is the instance stored in the network monitor of the netowrk monirot. This is used to enforce a singleton
@@ -34,6 +35,10 @@ NetworkMonitor * NetworkMonitor::getInstance() {
     return NetworkMonitor::instance;
 }
 
+void NetworkMonitor::setCaesarOffset(int offset) {
+    this->caesarOffset = offset;
+}
+
 /**
  * setListeningPort is a configuration method for setting the listening port for the network monitor this passed and set
  * as a string for libpcap
@@ -55,23 +60,38 @@ void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *p
 
     Logger::debug("Packet Found. Now Parsing");
 
-    char * ptr;
-
     struct sniff_ethernet * ethernet = (struct sniff_ethernet*)(packet);
     struct sniff_ip * ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
-    u_int size_ip = IP_HL(ip) * 4;
+    //u_int size_ip = IP_HL(ip) * 4;
+    u_int size_ip = sizeof(*ip) + 2;
     struct udphdr * udp = (struct udphdr *)(packet + SIZE_ETHERNET + size_ip);
     u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + 8);
 
     Logger::debug("Structures Found Over Packet");
     //check if it is our packet - has dest port of 4378
-    short destinationPort = ntohs(udp->uh_dport);
-    printf("%d\n", destinationPort);
+    Logger::debug("Here");
+    short destinationPort = ntohs(udp->dest);
+    printf("Destination Port: %d\n", destinationPort);
 
     //if our packet. parse what we know out of it
-    printf("%s\n", payload);
+    printf("Payload : %s\n", payload);
 
-    NetworkMonitor::instance->data = new string((char *)payload);
+    string strPayload = string((char *)payload);
+    string unencryptedPayload = "";
+
+    if(NetworkMonitor::instance->caesarOffset != -1){
+        Logger::debug("Payload Is Encrypted. Decrypting");
+
+        for(unsigned int i = 0; i < strPayload.length(); i++){
+            char c = strPayload[i];
+            unencryptedPayload += (c - (NetworkMonitor::instance->caesarOffset));
+        }
+
+        NetworkMonitor::instance->data = new string(unencryptedPayload);
+    }else{
+        NetworkMonitor::instance->data = new string((char *)payload);
+    }
+
     NetworkMonitor::instance->killListening();
 
 }
