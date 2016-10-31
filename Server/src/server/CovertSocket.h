@@ -21,9 +21,13 @@ private:
     string sourceAddress = "127.0.0.1";
     string destinationAddress = "127.0.0.1";
 
+    int caesarOffset = -1;
+
     void ChangetoDnsNameFormat(char* dns, char* host);
 
 public:
+
+    void setCaesarOffset(int offset);
 
     static CovertSocket * getInstance();
 

