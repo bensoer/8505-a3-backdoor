@@ -30,7 +30,6 @@ NetworkMonitor * NetworkMonitor::getInstance()
 
 std::string NetworkMonitor::getResponse()
 {
-    std::string response;
     char errbuf[PCAP_ERRBUF_SIZE];
     bpf_u_int32 subnetMask;
     bpf_u_int32 ip;
@@ -70,8 +69,8 @@ std::string NetworkMonitor::getResponse()
     }
 }
 
-bool NetworkMonitor::getInterface(){
-
+bool NetworkMonitor::getInterface()
+{
     Logger::debug("Main:getInterfaces - Initializing");
 
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -104,7 +103,7 @@ bool NetworkMonitor::getInterface(){
 
 void NetworkMonitor::processPayload(u_char *ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet)
 {
-    Logger::debug("Packet reviced");
+    Logger::debug("Packet received");
 
     char * ptr;
 
@@ -112,15 +111,14 @@ void NetworkMonitor::processPayload(u_char *ptrnull, const struct pcap_pkthdr *p
     struct sniff_ip * ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     u_int size_ip = IP_HL(ip) * 4;
     struct udphdr * udp = (struct udphdr *)(packet + SIZE_ETHERNET + size_ip);
-    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + 8);
+    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + 8 + sizeof(DNS_HEADER));
 
     Logger::debug("Structures Found Over Packet");
-    //check if it is our packet - has dest port of 4378
     short destinationPort = ntohs(udp->uh_dport);
-    printf("%d\n", destinationPort);
+    Logger::debug("Dst port:" + destinationPort);
 
     //if our packet. parse what we know out of it
-    printf("%s\n", payload);
+//    printf("%s\n", payload);
 
     NetworkMonitor::instance->data = new string((char *)payload);
     NetworkMonitor::instance->killListening();

@@ -93,6 +93,7 @@ void CovertSocket::send(string data) {
     struct udphdr *udp = (struct udphdr *) (datagram + sizeof(*ip));
     struct DNS_HEADER *dns = (struct DNS_HEADER *) (datagram + sizeof(*ip) + sizeof(*udp));
     char *query = (char *)(datagram + sizeof(*ip) + sizeof(*udp) + sizeof(*dns));
+    int val = 50000;
     //struct QUESTION *dnsq = (struct QUESTION *)(datagram + sizeof(*ip) + sizeof(*udp) + sizeof(*dns));
 
     struct sockaddr_in sin;
@@ -182,6 +183,7 @@ void CovertSocket::send(string data) {
     dnsq->qtype = htons(1); // 1 for IPv4 lookup
     dnsq->qclass = htons(1); //1 for internet class
 
+    usleep(val); //Look I know this is bad but the client is to slow to get the pcap adapter so it needs a little more time. I am so sorry
     //Send the packet
     if (sendto (this->rawSocket, datagram, ip->tot_len, 0, (struct sockaddr *) &sin, sizeof (sin)) < 0)
     {
