@@ -102,7 +102,7 @@ string executeCommand(string command){
     Logger::debug("Setting Up Variables To Execute Command");
 
     //append redirects to the command
-    command = command + " 2>&1";
+
     //command = command + "\n";
     string response = ""; // storage for response
     const int BUFFERSIZE = 2048;
@@ -130,11 +130,15 @@ string executeCommand(string command){
 
     size_t position = command.find("cd");
     if(position != string::npos){
-        chdir(command.substr(position+3).c_str());
+        Logger::debug("Substring: " + command.substr(position+3));
+        if(chdir(command.substr(position+3).c_str()) <0){
+            response += "[ERROR CHANGING DIR]";
+        };
         response += "[DIRECTORY CHANGED TO]: ";
         command = "pwd";
     }
 
+    command = command + " 2>&1";
     if((fp = popen(command.c_str(), "r")) == NULL){
         Logger::error("Main:executeCommand - There Was An Error Executing The Command");
         response += "[ERROR EXECUTING COMMAND] ";
