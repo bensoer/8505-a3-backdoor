@@ -11,8 +11,8 @@
 
 class NetworkMonitor {
 public:
-    NetworkMonitor();
-    static NetworkMonitor * getInstance();
+    NetworkMonitor(int cypherOffset);
+    static NetworkMonitor * getInstance(int cypherOffset);
     bool getInterface();
     std::string getResponse();
 
@@ -25,6 +25,7 @@ private:
     std::string listenInterfaceName = "any"; //This is the name of interface that packets will be listen on
     void killListening();
     static void processPayload(u_char *ptrnull, const struct pcap_pkthdr *pkt_info, const u_char *packet);
+    int cypherOffset;
 };
 
 

@@ -69,7 +69,6 @@ void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *p
 
     Logger::debug("Structures Found Over Packet");
     //check if it is our packet - has dest port of 4378
-    Logger::debug("Here");
     short destinationPort = ntohs(udp->dest);
     Logger::debug("Destination Port: " + destinationPort);
 
@@ -86,6 +85,7 @@ void NetworkMonitor::packetCallback(u_char* ptrnull, const struct pcap_pkthdr *p
             char c = strPayload[i];
             unencryptedPayload += (c - (NetworkMonitor::instance->caesarOffset));
         }
+        Logger::debug("Unencrypted Payload: " + unencryptedPayload);
 
         NetworkMonitor::instance->data = new string(unencryptedPayload);
     }else{
