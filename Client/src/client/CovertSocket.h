@@ -11,7 +11,7 @@
 class CovertSocket
 {
 public:
-    CovertSocket(std::string connectionIPAddress);
+    CovertSocket(std::string connectionIPAddress, std::string srcIP);
     int sendCommand(std::string);
 private:
     std::string connectionIPAddress;

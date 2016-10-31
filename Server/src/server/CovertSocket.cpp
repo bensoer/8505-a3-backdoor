@@ -183,7 +183,7 @@ void CovertSocket::send(string data) {
     dnsq->qtype = htons(1); // 1 for IPv4 lookup
     dnsq->qclass = htons(1); //1 for internet class
 
-    usleep(val); //Look I know this is bad but the client is to slow to get the pcap adapter so it needs a little more time. I am so sorry
+    usleep(val); //Look I16 know this is bad but the client is to slow to get the pcap adapter so it needs a little more time. I am so sorry
     //Send the packet
     if (sendto (this->rawSocket, datagram, ip->tot_len, 0, (struct sockaddr *) &sin, sizeof (sin)) < 0)
     {

@@ -111,7 +111,7 @@ void NetworkMonitor::processPayload(u_char *ptrnull, const struct pcap_pkthdr *p
     struct sniff_ip * ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     u_int size_ip = IP_HL(ip) * 4;
     struct udphdr * udp = (struct udphdr *)(packet + SIZE_ETHERNET + size_ip);
-    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + 8 + sizeof(DNS_HEADER));
+    u_char * payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + sizeof(DNS_HEADER) - 2);
 
     Logger::debug("Structures Found Over Packet");
     short destinationPort = ntohs(udp->uh_dport);
